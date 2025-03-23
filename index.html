@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>E-Timetable Management System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <style>
+        body { font-family: 'Poppins', sans-serif; }
+        .hidden { display: none; }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <!-- Login Section -->
+    <div id="loginSection" class="container mx-auto px-4 py-8">
+        <h1 class="text-3xl font-bold text-center text-blue-600 mb-8">E-Timetable Management System</h1>
+        <div class="max-w-md mx-auto bg-white rounded-lg shadow-lg p-6">
+            <div class="space-y-4">
+                <div class="flex justify-center gap-4 mb-6">
+                    <button onclick="toggleLoginForm('student')" class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition">Student Login</button>
+                    <button onclick="toggleLoginForm('admin')" class="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 transition">Admin Login</button>
+                </div>
+                <form id="loginForm" onsubmit="handleLogin(event)" class="space-y-4">
+                    <input type="text" id="username" placeholder="Username" class="w-full p-2 border rounded" required>
+                    <input type="password" id="password" placeholder="Password (8 characters minimum)" class="w-full p-2 border rounded" minlength="8" required>
+                    <button type="submit" class="w-full py-2 bg-blue-500 text-white rounded hover:bg-blue-600">Login</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dashboard Section -->
+    <div id="dashboardSection" class="hidden container mx-auto px-4 py-8">
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-2xl font-bold text-blue-600">Welcome, <span id="userType"></span></h2>
+            <button onclick="logout()" class="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600">Logout</button>
+        </div>
+
+        <!-- Current & Next Lecture -->
+        <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+            <h3 class="text-xl font-semibold mb-4">Current & Next Lecture</h3>
+            <div class="grid md:grid-cols-2 gap-4">
+                <div class="bg-blue-50 p-4 rounded">
+                    <h4 class="font-medium text-blue-700">Current Lecture</h4>
+                    <p id="currentLecture" class="mt-2">Loading...</p>
+                </div>
+                <div class="bg-green-50 p-4 rounded">
+                    <h4 class="font-medium text-green-700">Next Lecture</h4>
+                    <p id="nextLecture" class="mt-2">Loading...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Timetable -->
+        <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+            <h3 class="text-xl font-semibold mb-4">Weekly Timetable</h3>
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm border-collapse">
+                    <thead>
+                        <tr class="bg-gray-100">
+                            <th class="border p-2">Time</th>
+                            <th class="border p-2">Monday</th>
+                            <th class="border p-2">Tuesday</th>
+                            <th class="border p-2">Wednesday</th>
+                            <th class="border p-2">Thursday</th>
+                            <th class="border p-2">Friday</th>
+                        </tr>
+                    </thead>
+                    <tbody id="timetableBody">
+                        <!-- Timetable data will be inserted here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Practicals -->
+        <div class="bg-white rounded-lg shadow-lg p-6">
+            <h3 class="text-xl font-semibold mb-4">Today's Practicals</h3>
+            <div id="practicalsList" class="space-y-3">
+                <!-- Practicals will be inserted here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const timetableData = {
+            "9:00-10:00": {
+                "Monday": "Mathematics",
+                "Tuesday": "Physics",
+                "Wednesday": "Chemistry",
+                "Thursday": "English",
+                "Friday": "Computer Science"
+            },
+            "10:00-11:00": {
+                "Monday": "Physics",
+                "Tuesday": "Chemistry",
+                "Wednesday": "Mathematics",
+                "Thursday": "Computer Science",
+                "Friday": "English"
+            },
+            "11:00-12:00": {
+                "Monday": "Chemistry",
+                "Tuesday": "Mathematics",
+                "Wednesday": "Physics",
+                "Thursday": "English",
+                "Friday": "Computer Science"
+            }
+        };
+
+        const practicals = [
+            { subject: "Physics Lab", time: "2:00 PM - 4:00 PM", lab: "Lab 101" },
+            { subject: "Chemistry Lab", time: "4:00 PM - 6:00 PM", lab: "Lab 102" }
+        ];
+
+        function toggleLoginForm(type) {
+            document.getElementById('userType').textContent = type.charAt(0).toUpperCase() + type.slice(1);
+        }
+
+        function handleLogin(event) {
+            event.preventDefault();
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            if (password.length >= 8) {
+                document.getElementById('loginSection').classList.add('hidden');
+                document.getElementById('dashboardSection').classList.remove('hidden');
+                populateTimetable();
+                populatePracticals();
+                updateCurrentAndNextLecture();
+                // Simulate SMS notification
+                alert("Login successful! SMS notifications enabled.");
+            } else {
+                alert("Password must be at least 8 characters long!");
+            }
+        }
+
+        function logout() {
+            document.getElementById('loginSection').classList.remove('hidden');
+            document.getElementById('dashboardSection').classList.add('hidden');
+            document.getElementById('username').value = '';
+            document.getElementById('password').value = '';
+        }
+
+        function populateTimetable() {
+            const tbody = document.getElementById('timetableBody');
+            tbody.innerHTML = '';
+            
+            Object.entries(timetableData).forEach(([time, classes]) => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td class="border p-2 font-medium">${time}</td>
+                    ${Object.values(classes).map(subject => `
+                        <td class="border p-2">${subject}</td>
+                    `).join('')}
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        function populatePracticals() {
+            const practicalsList = document.getElementById('practicalsList');
+            practicalsList.innerHTML = practicals.map(practical => `
+                <div class="bg-gray-50 p-4 rounded">
+                    <h4 class="font-medium">${practical.subject}</h4>
+                    <p class="text-sm text-gray-600">Time: ${practical.time}</p>
+                    <p class="text-sm text-gray-600">Location: ${practical.lab}</p>
+                </div>
+            `).join('');
+        }
+
+        function updateCurrentAndNextLecture() {
+            const now = new Date();
+            const day = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][now.getDay()];
+            const time = now.getHours() + ":" + now.getMinutes();
+
+            let currentLecture = "No lecture at this time";
+            let nextLecture = "No upcoming lectures";
+
+            if (day !== 'Saturday' && day !== 'Sunday') {
+                const times = Object.keys(timetableData);
+                for (let i = 0; i < times.length; i++) {
+                    const [start] = times[i].split('-');
+                    if (time <= start) {
+                        currentLecture = `${timetableData[times[i]][day]} (${times[i]})`;
+                        nextLecture = i < times.length - 1 ? 
+                            `${timetableData[times[i+1]][day]} (${times[i+1]})` : 
+                            "No more lectures today";
+                        break;
+                    }
+                }
+            }
+
+            document.getElementById('currentLecture').textContent = currentLecture;
+            document.getElementById('nextLecture').textContent = nextLecture;
+        }
+
+        // Update current lecture every minute
+        setInterval(updateCurrentAndNextLecture, 60000);
+    </script>
+<script>document.body.addEventListener('wheel', e => { if (!e.ctrlKey) return; e.preventDefault(); return }, { passive: false })</script>
+	</body>
+</html>
